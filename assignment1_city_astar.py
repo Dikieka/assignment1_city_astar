@@ -1,19 +1,20 @@
 import heapq
 import math
-import time  
+import time
+
 
 def euclidean(a, b):
     return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
-def a_star(cities, roads, start, goal):
+
+def a_star(city, roads, start, goal):
     open_set = [(0, start)]
     came_from = {}
-    g = {city: float('inf') for city in cities}
+    g = {c: float('inf') for c in city}
     g[start] = 0
-    f = {city: float('inf') for city in cities}
-    f[start] = euclidean(cities[start], cities[goal])
-
-    node_count = 1  
+    f = {c: float('inf') for c in city}
+    f[start] = euclidean(city[start], city[goal])
+    node_count = 1
 
     while open_set:
         _, current = heapq.heappop(open_set)
@@ -21,14 +22,36 @@ def a_star(cities, roads, start, goal):
             return reconstruct(came_from, start, goal), node_count
 
         for neighbor in roads[current]:
-            temp_g = g[current] + euclidean(cities[current], cities[neighbor])
+            temp_g = g[current] + euclidean(city[current], city[neighbor])
             if temp_g < g[neighbor]:
                 came_from[neighbor] = current
                 g[neighbor] = temp_g
-                f[neighbor] = temp_g + euclidean(cities[neighbor], cities[goal])
+                f[neighbor] = temp_g + euclidean(city[neighbor], city[goal])
                 heapq.heappush(open_set, (f[neighbor], neighbor))
-                node_count += 1  
+                node_count += 1
     return None, node_count
+
+
+def gbfs(city, roads, start, goal):
+    open_set = [(euclidean(city[start], city[goal]), start)]
+    came_from = {}
+    visited = set()
+    node_count = 1
+
+    while open_set:
+        _, current = heapq.heappop(open_set)
+        if current == goal:
+            return reconstruct(came_from, start, goal), node_count
+
+        visited.add(current)
+        for neighbor in roads[current]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                heapq.heappush(open_set, (euclidean(city[neighbor], city[goal]), neighbor))
+                node_count += 1
+    return None, node_count
+
 
 def reconstruct(came_from, start, goal):
     path = [goal]
@@ -37,8 +60,9 @@ def reconstruct(came_from, start, goal):
     path.reverse()
     return path
 
+
 def run_assignment1():
-    cities = {
+    city = {
         "A": (0, 0), "B": (2, 1),
         "C": (4, 2), "D": (5, 5),
         "E": (1, 4)
@@ -53,20 +77,17 @@ def run_assignment1():
     }
 
     start, goal = "A", "D"
-    
-    start_time = time.time()
 
-    path, node_count = a_star(cities, roads, start, goal)
-    
-    end_time = time.time()
-    
-    execution_time = (end_time - start_time) * 1000
+    print("\nAssignment 1 - A* and GBFS Path (City Navigation):")
 
-    print("Assignment 1 - A* Path from A to D:")
-    if path:
-        print(" -> ".join(path))
-    else:
-        print("No path found.")
-    
-    print(f"Execution Time: {execution_time:.4f} ms")
-    print(f"Nodes Explored: {node_count}")
+    t0 = time.perf_counter()
+    a_path, a_nodes = a_star(city, roads, start, goal)
+    t1 = time.perf_counter()
+    print("A* Path:", " -> ".join(a_path) if a_path else "No path found")
+    print(f"A* Time: {(t1 - t0)*1000:.4f} ms | Nodes Explored: {a_nodes}")
+
+    t0 = time.perf_counter()
+    g_path, g_nodes = gbfs(city, roads, start, goal)
+    t1 = time.perf_counter()
+    print("GBFS Path:", " -> ".join(g_path) if g_path else "No path found")
+    print(f"GBFS Time: {(t1 - t0)*1000:.4f} ms | Nodes Explored: {g_nodes}")
